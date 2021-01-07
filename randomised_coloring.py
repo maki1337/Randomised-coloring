@@ -14,18 +14,32 @@ class Node:
 class Graph:
     def __init__ (self, G):
         self.G = G
-        self.generate_nodes(self.calc_degrees())
+        self.generate_nodes(G)
 
-    def generate_nodes(self, degrees):
-        nodes = list([i for i in range(len(self.G[0]))])
-        self.V = [Node(i, degrees[i]) for i in nodes]
+    def generate_nodes(self,G):
+        jobs = []
 
-    def calc_degrees(self):
-        return multiprocessing.Pool().map(self.calc_degree, range(len(self.G[0])))
+        q = multiprocessing.Queue()
+        for i in range(len(G)):
+            p = multiprocessing.Process(target=self.calc_degree, args=(G, i,q))
+            jobs.append(p)
+            p.start()
 
-    def calc_degree(self, vertex):
-        return sum(self.G[vertex])
+        for proc in jobs:
+            proc.join()
 
+        graph_nodes = [0]*len(G)
+        while q.empty() is False:
+            node =  q.get()
+            node_id = node.id[0]
+            graph_nodes[node_id] = node
+
+        self.V = graph_nodes
+
+    def calc_degree(self,graph,id,q):
+        degree = sum(graph[id])
+        node = Node(id,degree)
+        q.put(node)
 
 def initialize_graph(G):
     graph = Graph(G)
@@ -57,6 +71,7 @@ def main():
     [0, 1, 1,1,0]]
 
     graph = initialize_graph(G)
+    print(graph.V[0].available_colors)
     #print(graph.P)
     #print(graph.N)
 
