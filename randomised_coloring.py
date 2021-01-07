@@ -128,12 +128,12 @@ def choose_color(node):
     if(node.isProcessed):
         return node
 
-    random_color = chose_random_color(node)
+    # Izbere naključno barvo iz array in jo zapiše
+    random_color = random.choice(node.available_colors)
     node.chosen_color = random_color
 
-    # send message to neighbours
+    # pošlji sporočilom sosedom katero barvo si izbral
     node.inform_neighbours(random_color)
-    #print("Send messages end")
 
     return node
 
@@ -141,6 +141,7 @@ def recv_color(node):
     if(node.isProcessed):
         return node
 
+    # Dobimo barve od sosedov
     neighbour_colors = [msg for msg in node.check_for_messages() if msg[1] <= node.chosen_color]
     canColor = False
 
@@ -149,7 +150,9 @@ def recv_color(node):
         canColor = True
     #print("Can color: "+str(canColor)+" | "+str(node.id[0]))
     if canColor:
-        node.isColored = canColor
+        node.isColored = True
+    else:
+        node.chosen_color = 0
 
     return node
 
@@ -158,6 +161,7 @@ def check_if_colored(node):
         return node
 
     print("node id: "+ str(node.id[0])+" can color?:"+str(node.isColored))
+    # Če sem obarvan obvesti sosede
     if node.isColored:
         node.inform_neighbours((node.chosen_color, True))
         node.isProcessed = True
@@ -170,17 +174,14 @@ def delete_connection(node):
     if(node.isProcessed):
         return node
 
+    # Pridobim informacije, če je sosed že obarvam
     nodes = [msg for msg in node.check_for_messages() if msg[1][1] == True]
 
-    if len(nodes) != 0:
-        print("deleting")    
+    if len(nodes) != 0: 
         node.delete_colors(nodes)
         node.delete_neighbours(nodes)
 
     return node
-
-def chose_random_color(node):
-    return random.choice(node.available_colors)
 
 def can_color(neighbour_colors, chosen_color):
     for color in neighbour_colors:
@@ -201,7 +202,7 @@ def randomised_coloring(graph):
     graph.N = pool.map(delete_connection, graph.N)
     if all(n.isProcessed == True for n in graph.N):
         print("yes")
-        return graph.V
+        return graph.N
     else:
         print("not")
         return randomised_coloring(graph)
@@ -218,10 +219,6 @@ def main():
     [0, 1, 1,1,0]]
 
     graph = initialize_graph(G)
-    #print(graph.P)
-    #print(graph.N)
-    #print(graph.N[0].neighbours)
-    # (1,) : pipe (2,): 
     print("Randomised algorith starting ...")
     colored_graph = randomised_coloring(graph)
 
